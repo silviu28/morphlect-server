@@ -13,6 +13,10 @@ dependencies {
     testImplementation(kotlin("test"))
     // Source: https://mvnrepository.com/artifact/io.ktor/ktor-client-core-jvm
     implementation("io.ktor:ktor-client-core-jvm:3.4.0")
+    // Source: https://mvnrepository.com/artifact/io.ktor/ktor-server-core-jvm
+    implementation("io.ktor:ktor-server-core-jvm:3.4.0")
+    // Source: https://mvnrepository.com/artifact/io.ktor/ktor-server-netty-jvm
+    implementation("io.ktor:ktor-server-netty-jvm:3.4.0")
 }
 
 kotlin {
