@@ -2,10 +2,11 @@ package org.dto
 
 import kotlinx.serialization.Serializable
 
-// what the client receives
+// what is used by the server, to pass along data
 @Serializable
-data class ModelInfoDTO(
+data class InternalModelInfoDTO(
     val name: String,
     val description: String,
     val size: Long,
+    val filePath: String,
 )

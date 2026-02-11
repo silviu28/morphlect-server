@@ -34,6 +34,8 @@ dependencies {
     runtimeOnly("io.ktor:ktor-client-content-negotiation:3.4.0")
     // Source: https://mvnrepository.com/artifact/io.ktor/ktor-serialization
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.7")
+
+    implementation("ch.qos.logback:logback-classic:1.4.14")
 }
 
 kotlin {
