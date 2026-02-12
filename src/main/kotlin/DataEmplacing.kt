@@ -16,21 +16,26 @@ import java.io.File
  * for a given subdirectory returns model information if it is of valid structure.
  * */
 private fun retrieveModelData(modelSubdir: File): InternalModelInfoDTO? {
-    if (!modelSubdir.isDirectory) {
+    if (!modelSubdir.isDirectory)
         throw IOException("Given file reference is not a subdirectory.")
-    }
-    for (file in modelSubdir.listFiles()) {
-        if (file.name.equals(".meta")) {
-            val tokens = file.readText().split("\r\n")
-            return InternalModelInfoDTO(
-                name = tokens[0],
-                description = tokens[1],
-                size = file.length(),
-                filePath = file.path,
-            )
-        }
-    }
-    return null
+
+    val subdirFiles = modelSubdir.listFiles()
+    if (subdirFiles.size > 2)
+        throw IOException("Invalid directory structure.")
+
+    val metaFile = subdirFiles.find { it.name.equals(".meta") }
+        ?: throw IOException("Model meta file not found.")
+
+    val tokens = metaFile.readText().split("\r\n")
+    val modelFile = subdirFiles.find { it.name.removeSuffix(".tflite").equals(tokens[0]) }
+        ?: throw IOException("Model of given name not found.")
+
+    return InternalModelInfoDTO(
+        name = tokens[0],
+        description = tokens[1],
+        size = modelFile.length(),
+        filePath = modelFile.path,
+    )
 }
 
 /**
@@ -49,7 +54,7 @@ fun Application.configureData(directoryPath: String = "models") {
             }
         }
     } catch (e: IOException) {
-        println(e.toString())
+        log.error(e.toString())
     }
 
     // update db records

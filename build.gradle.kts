@@ -1,6 +1,11 @@
 plugins {
     kotlin("jvm") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.6.21"
+    id("io.ktor.plugin") version "2.3.7"
+}
+
+application {
+    mainClass.set("org.ApplicationKt")
 }
 
 group = "org"

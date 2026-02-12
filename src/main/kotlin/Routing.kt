@@ -17,9 +17,14 @@ fun Application.configureRouting() {
         // show all model data
         get("/api/models") {
             val query = call.request.queryParameters["query"]
+            val limit = call.request.queryParameters["limit"]?.toInt() ?: 10
+            val page = call.request.queryParameters["page"]?.toLong() ?: 0
+
             val data = transaction {
                 if (query.isNullOrBlank()) {
-                    Models.selectAll().map {
+                    Models.selectAll()
+                        .limit(limit, (page - 1) * limit)
+                        .map {
                         ModelInfoDTO(
                             name = it[Models.name],
                             description = it[Models.description],
@@ -29,6 +34,7 @@ fun Application.configureRouting() {
                 } else {
                     Models.selectAll()
                         .where { Models.name like "%$query%" }
+                        .limit(limit, (page - 1) * limit)
                         .map {
                             ModelInfoDTO(
                                 name = it[Models.name],
