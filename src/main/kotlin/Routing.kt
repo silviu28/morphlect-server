@@ -26,6 +26,7 @@ fun Application.configureRouting() {
                         .limit(limit, (page - 1) * limit)
                         .map {
                         ModelInfoDTO(
+                            id = it[Models.id],
                             name = it[Models.name],
                             description = it[Models.description],
                             size = it[Models.size],
@@ -37,6 +38,7 @@ fun Application.configureRouting() {
                         .limit(limit, (page - 1) * limit)
                         .map {
                             ModelInfoDTO(
+                                id = it[Models.id],
                                 name = it[Models.name],
                                 description = it[Models.description],
                                 size = it[Models.size],
@@ -58,6 +60,7 @@ fun Application.configureRouting() {
                     .singleOrNull()
                     ?.let {
                         ModelInfoDTO(
+                            id = it[Models.id],
                             name = it[Models.name],
                             description = it[Models.description],
                             size = it[Models.size],
@@ -88,7 +91,7 @@ fun Application.configureRouting() {
                 ContentDisposition.Attachment
                     .withParameter(
                         ContentDisposition.Parameters.FileName,
-                        "$modelName.tflite"
+                        "$modelName.mxt"
                     )
                     .toString()
             )

@@ -3,6 +3,9 @@ package org
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import kotlinx.io.IOException
+import kotlinx.serialization.decodeFromString
+import net.mamoe.yamlkt.Yaml
+import org.data.MXTManifest
 import org.dto.InternalModelInfoDTO
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
@@ -11,6 +14,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.schema.Models
 import org.sqlite.SQLiteException
 import java.io.File
+import java.io.FileInputStream
+import java.util.zip.ZipInputStream
 
 /**
  * for a given subdirectory returns model information if it is of valid structure.
@@ -47,9 +52,28 @@ fun Application.configureData(directoryPath: String = "models") {
 
     try {
         if (dir.isDirectory) {
-            dir.listFiles().forEach { subdir ->
-                if (subdir.isDirectory) {
-                    retrieveModelData(subdir)?.let { modelsInfo.add(it) }
+            dir.listFiles()?.forEach { file ->
+                if (file.extension == "mxt") {
+                    ZipInputStream(file.inputStream()).use { zip ->
+                        var curr = zip.nextEntry
+                        while (curr != null) {
+                            if (curr.name == "extension_manifest.yml") {
+                                val manifest = Yaml.decodeFromString<MXTManifest>(
+                                    zip.bufferedReader().readText()
+                                )
+                                modelsInfo.add(
+                                    InternalModelInfoDTO(
+                                        name = file.name.removeSuffix(".mxt"),
+                                        description = manifest.description,
+                                        filePath = file.path,
+                                        size = file.length(),
+                                    )
+                                )
+                                return@use
+                            }
+                            curr = zip.nextEntry
+                        }
+                    }
                 }
             }
         }
