@@ -44,6 +44,9 @@ dependencies {
 
     // Source: https://mvnrepository.com/artifact/net.mamoe.yamlkt/yamlkt
     implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
+
+    // Source: https://mvnrepository.com/artifact/io.ktor/ktor-server-rate-limit-jvm
+    implementation("io.ktor:ktor-server-rate-limit-jvm:3.4.3")
 }
 
 kotlin {
