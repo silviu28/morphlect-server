@@ -1,0 +1,14 @@
+services:
+  morphlect-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      SQLITE_DB_PATH: /data/db.sqlite
+    volumes:
+      - morphlect-db:/data
+    restart: unless-stopped
+
+volumes:
+  morphlect-db:
