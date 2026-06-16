@@ -8,83 +8,47 @@ import net.mamoe.yamlkt.Yaml
 import org.data.MXTManifest
 import org.dto.InternalModelInfoDTO
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.schema.Models
-import org.sqlite.SQLiteException
 import java.io.File
-import java.io.FileInputStream
 import java.util.zip.ZipInputStream
 
-/**
- * for a given subdirectory returns model information if it is of valid structure.
- * */
-private fun retrieveModelData(modelSubdir: File): InternalModelInfoDTO? {
-    if (!modelSubdir.isDirectory)
-        throw IOException("Given file reference is not a subdirectory.")
 
-    val subdirFiles = modelSubdir.listFiles()
-    if (subdirFiles.size > 2)
-        throw IOException("Invalid directory structure.")
-
-    val metaFile = subdirFiles.find { it.name.equals(".meta") }
-        ?: throw IOException("Model meta file not found.")
-
-    val tokens = metaFile.readText().split("\r\n")
-    val modelFile = subdirFiles.find { it.name.removeSuffix(".tflite").equals(tokens[0]) }
-        ?: throw IOException("Model of given name not found.")
-
-    return InternalModelInfoDTO(
-        name = tokens[0],
-        description = tokens[1],
-        size = modelFile.length(),
-        filePath = modelFile.path,
-    )
-}
-
-/**
- * create a record of all models stored in given directoryPath.
- */
-fun Application.configureData(directoryPath: String = "models") {
+fun searchDirectoryForModels(directoryPath: String): List<InternalModelInfoDTO> {
     val dir = File(directoryPath)
     val modelsInfo = mutableListOf<InternalModelInfoDTO>()
+    if (!dir.isDirectory) return modelsInfo
 
-    try {
-        if (dir.isDirectory) {
-            dir.listFiles()?.forEach { file ->
-                if (file.extension == "mxt") {
-                    ZipInputStream(file.inputStream()).use { zip ->
-                        var curr = zip.nextEntry
-                        while (curr != null) {
-                            if (curr.name == "extension_manifest.yml") {
-                                val manifest = Yaml.decodeFromString<MXTManifest>(
-                                    zip.bufferedReader().readText()
-                                )
-                                modelsInfo.add(
-                                    InternalModelInfoDTO(
-                                        name = file.name.removeSuffix(".mxt"),
-                                        description = manifest.description,
-                                        filePath = file.path,
-                                        size = file.length(),
-                                    )
-                                )
-                                return@use
-                            }
-                            curr = zip.nextEntry
-                        }
+    dir.listFiles()?.forEach { file ->
+        if (file.extension == "mxt") {
+            ZipInputStream(file.inputStream()).use { zip ->
+                var curr = zip.nextEntry
+                while (curr != null) {
+                    if (curr.name == "extension_manifest.yml") {
+                        val manifest = Yaml.decodeFromString<MXTManifest>(zip.bufferedReader().readText())
+                        modelsInfo.add(
+                            InternalModelInfoDTO(
+                                name = file.name.removeSuffix(".mxt"),
+                                description = manifest.description,
+                                filePath = file.path,
+                                size = file.length(),
+                            )
+                        )
+                        return@use
                     }
+                    curr = zip.nextEntry
                 }
             }
         }
-    } catch (e: IOException) {
-        log.error(e.toString())
     }
+    return modelsInfo
+}
 
-    // update db records
+fun persistModels(models: List<InternalModelInfoDTO>) {
     transaction {
         SchemaUtils.create(Models)
-        modelsInfo.forEach { dto ->
+        models.forEach { dto ->
             Models.insertIgnore {
                 it[name] = dto.name
                 it[description] = dto.description
@@ -93,6 +57,18 @@ fun Application.configureData(directoryPath: String = "models") {
             }
         }
     }
+}
 
+/**
+ * create a record of all models stored in given directoryPath.
+ */
+fun Application.configureData(directoryPath: String = "models") {
+    val modelsInfo = try {
+        searchDirectoryForModels(directoryPath)
+    } catch (e: IOException) {
+        log.error(e.toString())
+        emptyList()
+    }
+    persistModels(modelsInfo)
     log.info("Records updated in database.")
 }

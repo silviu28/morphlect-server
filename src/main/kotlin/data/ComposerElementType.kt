@@ -7,6 +7,5 @@ enum class ComposerElementType {
     RunButton,
     ImageUpload,
     TextInput,
-    AudioUpload,
     FloatGauge,
 }
